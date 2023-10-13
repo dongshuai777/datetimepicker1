@@ -148,6 +148,7 @@ public class RNDismissableTimePickerDialog extends MinuteIntervalSnappableTimePi
         np.setLayoutParams(params);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             np.setTextSize(50);
+            np.setTextColor(Color.parseColor("#4869F6")); 
         }
     }
 }
