@@ -11,12 +11,20 @@ import static com.reactcommunity.rndatetimepicker.ReflectionHelper.findField;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.NumberPicker;
 import android.widget.TimePicker;
 
 import androidx.annotation.Nullable;
@@ -36,78 +44,79 @@ import androidx.annotation.Nullable;
 
 public class RNDismissableTimePickerDialog extends MinuteIntervalSnappableTimePickerDialog {
 
-  public RNDismissableTimePickerDialog(
-    Context context,
-    @Nullable TimePickerDialog.OnTimeSetListener callback,
-    int hourOfDay,
-    int minute,
-    int minuteInterval,
-    boolean is24HourView,
-    RNTimePickerDisplay display
-  ) {
-    super(context, callback, hourOfDay, minute, minuteInterval, is24HourView, display);
-    fixSpinner(context, hourOfDay, minute, is24HourView, display);
-  }
-
-  public RNDismissableTimePickerDialog(
-    Context context,
-    int theme,
-    @Nullable TimePickerDialog.OnTimeSetListener callback,
-    int hourOfDay,
-    int minute,
-    int minuteInterval,
-    boolean is24HourView,
-    RNTimePickerDisplay display
-  ) {
-    super(context, theme, callback, hourOfDay, minute, minuteInterval, is24HourView, display);
-    fixSpinner(context, hourOfDay, minute, is24HourView, display);
-  }
-
-  @Override
-  protected void onStop() {
-    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
-      super.onStop();
+    public RNDismissableTimePickerDialog(
+            Context context,
+            @Nullable TimePickerDialog.OnTimeSetListener callback,
+            int hourOfDay,
+            int minute,
+            int minuteInterval,
+            boolean is24HourView,
+            RNTimePickerDisplay display
+    ) {
+        super(context, callback, hourOfDay, minute, minuteInterval, is24HourView, display);
+        fixSpinner(context, hourOfDay, minute, is24HourView, display);
     }
-  }
 
-  private void fixSpinner(Context context, int hourOfDay, int minute, boolean is24HourView, RNTimePickerDisplay display) {
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.N && display == RNTimePickerDisplay.SPINNER) {
-      try {
-        Class<?> styleableClass = Class.forName("com.android.internal.R$styleable");
-        Field timePickerStyleableField = styleableClass.getField("TimePicker");
-        int[] timePickerStyleable = (int[]) timePickerStyleableField.get(null);
-        final TypedArray a = context.obtainStyledAttributes(null, timePickerStyleable, android.R.attr.timePickerStyle, 0);
-        a.recycle();
+    public RNDismissableTimePickerDialog(
+            Context context,
+            int theme,
+            @Nullable TimePickerDialog.OnTimeSetListener callback,
+            int hourOfDay,
+            int minute,
+            int minuteInterval,
+            boolean is24HourView,
+            RNTimePickerDisplay display
+    ) {
+        super(context, theme, callback, hourOfDay, minute, minuteInterval, is24HourView, display);
+        fixSpinner(context, hourOfDay, minute, is24HourView, display);
+    }
 
-        TimePicker timePicker = (TimePicker) findField(TimePickerDialog.class, TimePicker.class, "mTimePicker").get(this);
-        Class<?> delegateClass = Class.forName("android.widget.TimePicker$TimePickerDelegate");
-        Field delegateField = findField(TimePicker.class, delegateClass, "mDelegate");
-        Object delegate = delegateField.get(timePicker);
-        Class<?> spinnerDelegateClass;
-        spinnerDelegateClass = Class.forName("android.widget.TimePickerSpinnerDelegate");
-        // In 7.0 Nougat for some reason the timePickerMode is ignored and the delegate is TimePickerClockDelegate
-        if (delegate.getClass() != spinnerDelegateClass) {
-          delegateField.set(timePicker, null); // throw out the TimePickerClockDelegate!
-          timePicker.removeAllViews(); // remove the TimePickerClockDelegate views
-          Constructor spinnerDelegateConstructor = spinnerDelegateClass.getConstructor(TimePicker.class, Context.class, AttributeSet.class, int.class, int.class);
-          spinnerDelegateConstructor.setAccessible(true);
-          // Instantiate a TimePickerSpinnerDelegate
-          delegate = spinnerDelegateConstructor.newInstance(timePicker, context, null, android.R.attr.timePickerStyle, 0);
-          delegateField.set(timePicker, delegate); // set the TimePicker.mDelegate to the spinner delegate
-          // Set up the TimePicker again, with the TimePickerSpinnerDelegate
-          timePicker.setIs24HourView(is24HourView);
-          timePicker.setCurrentHour(hourOfDay);
-          timePicker.setCurrentMinute(minute);
-          timePicker.setOnTimeChangedListener(this);
+    @Override
+    protected void onStop() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
+            super.onStop();
         }
-        resizePicker((TimePicker) findField(TimePickerDialog.class, TimePicker.class, "mTimePicker").get(this));
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
     }
-  }
 
-  /**
+    private void fixSpinner(Context context, int hourOfDay, int minute, boolean is24HourView, RNTimePickerDisplay display) {
+        try {
+            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.N && display == RNTimePickerDisplay.SPINNER) {
+                Class<?> styleableClass = Class.forName("com.android.internal.R$styleable");
+                Field timePickerStyleableField = styleableClass.getField("TimePicker");
+                int[] timePickerStyleable = (int[]) timePickerStyleableField.get(null);
+                final TypedArray a = context.obtainStyledAttributes(null, timePickerStyleable, android.R.attr.timePickerStyle, 0);
+                a.recycle();
+
+
+                TimePicker timePicker = (TimePicker) findField(TimePickerDialog.class, TimePicker.class, "mTimePicker").get(this);
+                Class<?> delegateClass = Class.forName("android.widget.TimePicker$TimePickerDelegate");
+                Field delegateField = findField(TimePicker.class, delegateClass, "mDelegate");
+                Object delegate = delegateField.get(timePicker);
+                Class<?> spinnerDelegateClass;
+                spinnerDelegateClass = Class.forName("android.widget.TimePickerSpinnerDelegate");
+                // In 7.0 Nougat for some reason the timePickerMode is ignored and the delegate is TimePickerClockDelegate
+                if (delegate.getClass() != spinnerDelegateClass) {
+                    delegateField.set(timePicker, null); // throw out the TimePickerClockDelegate!
+                    timePicker.removeAllViews(); // remove the TimePickerClockDelegate views
+                    Constructor spinnerDelegateConstructor = spinnerDelegateClass.getConstructor(TimePicker.class, Context.class, AttributeSet.class, int.class, int.class);
+                    spinnerDelegateConstructor.setAccessible(true);
+                    // Instantiate a TimePickerSpinnerDelegate
+                    delegate = spinnerDelegateConstructor.newInstance(timePicker, context, null, android.R.attr.timePickerStyle, 0);
+                    delegateField.set(timePicker, delegate); // set the TimePicker.mDelegate to the spinner delegate
+                    // Set up the TimePicker again, with the TimePickerSpinnerDelegate
+                    timePicker.setIs24HourView(is24HourView);
+                    timePicker.setCurrentHour(hourOfDay);
+                    timePicker.setCurrentMinute(minute);
+                    timePicker.setOnTimeChangedListener(this);
+                }
+            }
+            resizePicker((TimePicker) findField(TimePickerDialog.class, TimePicker.class, "mTimePicker").get(this));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * 调整FrameLayout的大小
      */
     private void resizePicker(FrameLayout tp) {        //DatePicker和TimePicker继承自FrameLayout
@@ -143,12 +152,12 @@ public class RNDismissableTimePickerDialog extends MinuteIntervalSnappableTimePi
      * 调整numberpicker大小
      */
     private void resizeNumberPicker(NumberPicker np) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(250, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(300, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setMargins(10, 5, 10, 5);
         np.setLayoutParams(params);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             np.setTextSize(50);
-            np.setTextColor(Color.parseColor("#4869F6")); 
+            np.setTextColor(Color.parseColor("#4869F6"));
         }
     }
 }
