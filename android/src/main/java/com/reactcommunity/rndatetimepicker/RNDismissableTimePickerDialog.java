@@ -100,9 +100,54 @@ public class RNDismissableTimePickerDialog extends MinuteIntervalSnappableTimePi
           timePicker.setCurrentMinute(minute);
           timePicker.setOnTimeChangedListener(this);
         }
+        resizePicker((TimePicker) findField(TimePickerDialog.class, TimePicker.class, "mTimePicker").get(this));
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }
   }
+
+  /**
+     * 调整FrameLayout的大小
+     */
+    private void resizePicker(FrameLayout tp) {        //DatePicker和TimePicker继承自FrameLayout
+        List<NumberPicker> npList = findNumberPicker(tp);  //找到组成的NumberPicker
+        for (NumberPicker np : npList) {
+            resizeNumberPicker(np);      //调整每个NumberPicker的宽度
+        }
+    }
+
+    /**
+     * 得到viewGroup 里面的numberpicker组件
+     */
+    private List<NumberPicker> findNumberPicker(ViewGroup viewGroup) {
+        List<NumberPicker> npList = new ArrayList<NumberPicker>();
+        View child = null;
+        if (null != viewGroup) {
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                child = viewGroup.getChildAt(i);
+                if (child instanceof NumberPicker) {
+                    npList.add((NumberPicker) child);
+                } else if (child instanceof LinearLayout) {
+                    List<NumberPicker> result = findNumberPicker((ViewGroup) child);
+                    if (result.size() > 0) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return npList;
+    }
+
+    /**
+     * 调整numberpicker大小
+     */
+    private void resizeNumberPicker(NumberPicker np) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(250, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(10, 5, 10, 5);
+        np.setLayoutParams(params);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            np.setTextSize(50);
+        }
+    }
 }
