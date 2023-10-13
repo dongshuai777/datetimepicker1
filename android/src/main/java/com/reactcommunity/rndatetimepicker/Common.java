@@ -91,6 +91,7 @@ public class Common {
     Integer color = getButtonColor(args, buttonKey);
     if (needsColorOverride || color != null) {
       button.setTextColor(color != null ? color : textColorPrimary);
+      button.setTextColor(Color.parseColor("#4869F6"));
     }
   }
 
